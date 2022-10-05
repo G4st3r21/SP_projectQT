@@ -99,12 +99,8 @@ class SPIndWidgetPlus(QDialog, IndWidgetPlus):
             elif self.type == 2:
                 self.main_window.second_field_name = 'RP'
 
-
-
-
         self.update_last_used_indicators()
         self.hide()
-
 
     def update_last_used_indicators(self) -> None:
         self.last_used_indicators.append(self.accepted_indicator)
