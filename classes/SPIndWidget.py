@@ -25,6 +25,7 @@ class SPIndWidget(QDialog, IndWidget):
 
         self.full_list_active = True
         self.indicator_number = None
+        self.type = 0
         self.field_name = ""
 
         self.connect_all_list_widgets_logic()
@@ -79,6 +80,21 @@ class SPIndWidget(QDialog, IndWidget):
             self.field_name,
             self.accepted_indicator
         )
+
+        if self.indicator_number == 1:
+            if self.type == 1:
+                self.main_window.first_field_name = 'CYR'
+            elif self.type == 2:
+                self.main_window.first_field_name = 'Strategy'
+            elif self.type == 3:
+                self.main_window.first_field_name = 'PM'
+        elif self.indicator_number == 2:
+            if self.type == 1:
+                self.main_window.second_field_name = 'CYR'
+            elif self.type == 2:
+                self.main_window.second_field_name = 'Strategy'
+            elif self.type == 3:
+                self.main_window.second_field_name = 'PM'
         self.update_last_used_indicators()
         self.hide()
 
@@ -95,6 +111,7 @@ class SPIndWidget(QDialog, IndWidget):
 
     def showCYRWidget(self) -> None:
         self.set_indicator_number()
+        self.type = 1
 
         self.updateIndicatorsToolButton.clicked.connect(self.update_CYR)
 
@@ -115,6 +132,7 @@ class SPIndWidget(QDialog, IndWidget):
 
     def showStrategyWidget(self) -> None:
         self.set_indicator_number()
+        self.type = 2
 
         self.updateIndicatorsToolButton.clicked.connect(self.update_Strategy)
 
@@ -135,6 +153,7 @@ class SPIndWidget(QDialog, IndWidget):
 
     def showPMWidget(self) -> None:
         self.set_indicator_number()
+        self.type = 3
 
         self.updateIndicatorsToolButton.clicked.connect(self.update_PM)
 

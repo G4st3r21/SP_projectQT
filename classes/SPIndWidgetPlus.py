@@ -3,7 +3,6 @@ from PyQt5.QtWidgets import QDialog, QApplication
 from classes.DBThreadInteraction import DBInteraction
 from classes.IndustriesIndicators import industries_indicators
 from uiFiles.IndSubMenuWidget1 import Ui_Form as IndWidgetPlus
-from classes.RequestDB import RequestDB, RequestDBPlus
 
 
 class SPIndWidgetPlus(QDialog, IndWidgetPlus):
@@ -13,12 +12,14 @@ class SPIndWidgetPlus(QDialog, IndWidgetPlus):
         self.setupUi(self)  # Подгрузка из py класса
         self.main_window = None
 
+        self.industry_list = []
         self.indicator_list = []
         self.search_ind_list = []
         self.last_used_indicators = []
         self.recommended_indicators = []
 
         self.accepted_indicator = ''
+        self.accepted_schema_name = ''
 
         self.request_DBPlus = None
 
@@ -80,8 +81,30 @@ class SPIndWidgetPlus(QDialog, IndWidgetPlus):
             self.accepted_indicator,
             self.chooseIndustryComboBox.currentText()
         )
+
+        self.accepted_schema_name = industries_indicators.GP_industries[
+            self.chooseIndustryComboBox.currentIndex()
+        ]
+
+        if self.indicator_number == 1:
+            self.main_window.accepted_first_schema_name = self.accepted_schema_name
+            if self.type == 1:
+                self.main_window.first_field_name = 'GP'
+            elif self.type == 2:
+                self.main_window.first_field_name = 'RP'
+        elif self.indicator_number == 2:
+            self.main_window.accepted_second_schema_name = self.accepted_schema_name
+            if self.type == 1:
+                self.main_window.second_field_name = 'GP'
+            elif self.type == 2:
+                self.main_window.second_field_name = 'RP'
+
+
+
+
         self.update_last_used_indicators()
         self.hide()
+
 
     def update_last_used_indicators(self) -> None:
         self.last_used_indicators.append(self.accepted_indicator)
@@ -96,44 +119,48 @@ class SPIndWidgetPlus(QDialog, IndWidgetPlus):
 
     def showGPWidget(self) -> None:
         self.set_indicator_number()
+        self.type = 1
 
         self.updateIndicatorsToolButton.clicked.connect(self.update_GP)
 
         self.setWindowTitle(f'Выбор показателей Государственных проектов')
         self.field_name = "Государственные проекты"
-        self.indicator_list = industries_indicators.GP_industries_ru
-        self.chooseIndustryComboBox.addItems(self.indicator_list)
+        self.industry_list = industries_indicators.GP_industries_ru
+        self.chooseIndustryComboBox.addItems(self.industry_list)
 
         self.show()
         self.chooseIndustryComboBox.currentTextChanged.connect(self.load_GP_industry_indicators)
 
     def showRPWidget(self) -> None:
         self.set_indicator_number()
+        self.type = 2
 
         self.updateIndicatorsToolButton.clicked.connect(self.request_DBPlus.start)
 
         self.setWindowTitle(f'Выбор показателей Региональных проектов')
         self.field_name = "Региональные проекты"
-        self.indicator_list = industries_indicators.RP_industries_ru
-        self.chooseIndustryComboBox.addItems(self.indicator_list)
+        self.industry_list = industries_indicators.RP_industries_ru
+        self.chooseIndustryComboBox.addItems(self.industry_list)
 
         self.show()
         self.chooseIndustryComboBox.currentTextChanged.connect(self.load_RP_industry_indicators)
 
     def load_GP_industry_indicators(self) -> None:
+        self.indicator_list = [] + industries_indicators.GP_indicators_by_industries[
+            industries_indicators.GP_industries[self.chooseIndustryComboBox.currentIndex()]
+        ]
         self.allIndicatorsListWidget.clear()
         self.allIndicatorsListWidget.addItems(
-            industries_indicators.indicators_by_industries[
-                industries_indicators.GP_industries[self.chooseIndustryComboBox.currentIndex()]
-            ]
+            self.indicator_list
         )
 
     def load_RP_industry_indicators(self) -> None:
+        self.indicator_list = [] + industries_indicators.RP_indicators_by_industries[
+            industries_indicators.RP_industries[self.chooseIndustryComboBox.currentIndex()]
+        ]
         self.allIndicatorsListWidget.clear()
         self.allIndicatorsListWidget.addItems(
-            industries_indicators.indicators_by_industries[
-                industries_indicators.RP_industries[self.chooseIndustryComboBox.currentIndex()]
-            ]
+            self.indicator_list
         )
 
     def update_GP(self) -> None:

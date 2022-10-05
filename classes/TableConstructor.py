@@ -7,3 +7,6 @@ class TableConstructor:
 
     def collect_table(self):
         pass
+
+    def collect_table_lite(self):
+        pass

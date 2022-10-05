@@ -1,4 +1,3 @@
-from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtCore import Qt
 
@@ -8,7 +7,7 @@ from classes.DataBase import DataBase
 
 
 class SPMainWindow(QMainWindow, Ui_MainWindow):
-    def __init__(self, widget, widget_plus):
+    def __init__(self, widget, widget_plus, comparing_widget):
         super().__init__()
         # uic.loadUi('uiFiles/MainWindow.ui', self) # Подгрузка из ui файла
         self.setupUi(self)  # Подгрузка из py класса
@@ -19,10 +18,15 @@ class SPMainWindow(QMainWindow, Ui_MainWindow):
         self.indWidget.main_window = self
         self.indWidgetPlus = widget_plus
         self.indWidgetPlus.main_window = self
+        self.ComparingLite = comparing_widget
         self.DBSettings = SPAutoUpdateSettings()
 
+        self.first_field_name = ''
         self.first_selected_ind = ''
+        self.accepted_first_schema_name = ''
+        self.second_field_name = ''
         self.second_selected_ind = ''
+        self.accepted_second_schema_name = ''
 
         self.connect_period_buttons_logic()
         self.connect_indicators_buttons_logic()
@@ -74,6 +78,39 @@ class SPMainWindow(QMainWindow, Ui_MainWindow):
         self.RPPushButton.clicked.connect(self.indWidgetPlus.showRPWidget)
         self.GPPushButton2.clicked.connect(self.indWidgetPlus.showGPWidget)
         self.RPPushButton2.clicked.connect(self.indWidgetPlus.showRPWidget)
+
+        self.compareLitePushButton.clicked.connect(self.setting_compareLitePB)
+
+    def setting_compareLitePB(self):
+        self.first_selected_ind = [self.first_field_name, self.accepted_first_schema_name, self.first_selected_ind]
+        self.second_selected_ind = [self.second_field_name, self.accepted_second_schema_name, self.second_selected_ind]
+
+        match self.first_field_name:
+            case "GP":
+                first_indicators = self.DB.get_GP_indicators(self.accepted_first_schema_name)
+            case "RP":
+                first_indicators = self.DB.get_RP_indicators(self.accepted_first_schema_name)
+            case "CYR":
+                first_indicators = self.DB.get_CYR_indicators_names()
+            case "PM":
+                first_indicators = self.DB.get_PM_indicators()
+            case "Strategy":
+                first_indicators = self.DB.get_strategy_indicators()
+
+        match self.second_field_name:
+            case "GP":
+                second_indicators = self.DB.get_GP_indicators(self.accepted_second_schema_name)
+            case "RP":
+                second_indicators = self.DB.get_RP_indicators(self.accepted_second_schema_name)
+            case "CYR":
+                second_indicators = self.DB.get_CYR_indicators_names()
+            case "PM":
+                second_indicators = self.DB.get_PM_indicators()
+            case "Strategy":
+                second_indicators = self.DB.get_strategy_indicators()
+
+        # self.ComparingLite.first_indicators
+        pass
 
     def hide_period_periods(self) -> None:
         self.yearPeriodButton.setDisabled(False)

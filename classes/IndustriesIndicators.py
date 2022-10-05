@@ -4,7 +4,8 @@ from dataclasses import dataclass
 @dataclass
 class IndustriesIndicators:
     indicators: dict
-    indicators_by_industries: dict
+    GP_indicators_by_industries: dict
+    RP_indicators_by_industries: dict
 
     GP_industries_all: list
     GP_industries: list
@@ -16,6 +17,7 @@ class IndustriesIndicators:
 
 
 industries_indicators = IndustriesIndicators(
+    dict(),
     dict(),
     dict(),
     list(),
