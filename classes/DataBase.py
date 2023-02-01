@@ -1,7 +1,9 @@
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 from classes.config import *
-from models.public import Year, IndicatorsName, Indicator, IndicationsRf, IndicationsVo
+from models.public import Year, IndicatorsName, Indicator
+from models.public import IndicationsRf, IndicationsVo, Cyr, ResponseObj, Gosprogram, Task, \
+    t_indications_rf_vo, t_indications_rf_target, t_gosprogram_target
 from models import information_schema
 
 
@@ -26,6 +28,18 @@ def optimize_id_list(id_list):  # Оптимизация списка id
         optimized_list.append(temp_list[0])
 
     return optimized_list
+
+
+def request_event(conn, schema_name, tables_with_events, code_event):
+    for table in tables_with_events:
+        event_title = conn.execute(
+            f"SELECT * FROM " +
+            f'"{schema_name}"' + f".{table} WHERE code = '{code_event}'"
+        ).first()
+        if event_title is not None:
+            return event_title[1]
+
+    return None
 
 
 class DataBase:
@@ -97,28 +111,6 @@ class DataBase:
 
         return industries_names, industries_names_ru
 
-    def get_GP_indicators_names(self, schema_name):
-        tables_with_ind_names = "names_indicators____"
-        tables = self.get_table_list_by_schema_and_table_name(schema_name, tables_with_ind_names)
-
-        indicators_names = []
-        for table in tables:
-            sql_request = f'SELECT title_indication FROM "{schema_name}".{table}'
-            indicators_names += self.conn.execute(sql_request).fetchall()
-
-        return [ind_name[0] for ind_name in indicators_names]
-
-    def get_GP_indicators(self, schema_name):
-        tables_with_indicators = "indicators____"
-        tables = self.get_table_list_by_schema_and_table_name(schema_name, tables_with_indicators)
-
-        indicators = []
-        for table in tables:
-            sql_request = f'SELECT * FROM "{schema_name}".{table}'
-            indicators += self.conn.execute(sql_request).fetchall()
-
-        return indicators
-
     def get_strategy_indicators_names(self):
         table_list = self.get_table_list_by_schema_and_column_name("Strategies", "id_indicator_name")
         indicators = set()
@@ -139,6 +131,95 @@ class DataBase:
             indicators += table_indicators
 
         return indicators
+
+    def get_GP_indicator_names(self, schema_name):
+        tables_with_ind_names = "names_indicators____"
+        tables = self.get_table_list_by_schema_and_table_name(schema_name, tables_with_ind_names)
+
+        indicators_names = []
+        for table in tables:
+            sql_request = f'SELECT title_indication FROM "{schema_name}".{table}'
+            indicators_names += self.conn.execute(sql_request).fetchall()
+
+        return [ind_name[0] for ind_name in indicators_names]
+
+    def get_GP_info(self, schema_name, indicator_name):
+        tables_with_titles = self.get_table_list_by_schema_and_table_name(schema_name, "names_indicators____")
+        tables_with_indicators = self.get_table_list_by_schema_and_table_name(schema_name, "indicators____")
+        tables_with_events = self.get_table_list_by_schema_and_table_name(schema_name, "all_events____")
+        tables_with_rejections = self.get_table_list_by_schema_and_table_name(schema_name, "rejection____")
+
+        try:
+            titles_id_by_years = [
+                (table[-4:],
+                 self.conn.execute(
+                     f"SELECT id, type FROM " +
+                     f'"{schema_name}"' + f".{table} WHERE title_indication like '{indicator_name}'"
+                 ).first()
+                 ) for table in tables_with_titles
+            ]
+        except Exception as e:
+            print("Произошла ошибка при поиске ID, TYPE в таблицах names_indicators____")
+            return None
+
+        try:
+            indicators_by_years = [
+                self.conn.execute(
+                    f"SELECT * FROM " +
+                    f'"{schema_name}"' + f".{tables_with_indicators[year]} WHERE id = {titles_id_by_years[year][1][0]}"
+                ).first()
+                for year in range(len(titles_id_by_years))
+            ]
+        except Exception as e:
+            print("Произошла ошибка при поиске всех данных о показателе в таблицах indicators____")
+            return None
+
+        code_event = indicators_by_years[0][1]
+
+        match len(code_event):
+            case 5:
+                event_title = request_event(self.conn, schema_name, tables_with_events, code_event)
+                main_event_title = request_event(self.conn, schema_name, tables_with_events, code_event[:4])
+                subprogram_title = request_event(self.conn, schema_name, tables_with_events, code_event[0])
+            case 3:
+                event_title = None
+                main_event_title = request_event(self.conn, schema_name, tables_with_events, code_event[:4])
+                subprogram_title = request_event(self.conn, schema_name, tables_with_events, code_event[0])
+            case 1:
+                event_title = None
+                main_event_title = None
+                subprogram_title = request_event(self.conn, schema_name, tables_with_events, code_event[0])
+            case _:
+                event_title = None
+                main_event_title = None
+                subprogram_title = None
+
+        rejection = [
+            (
+                table[-4:],
+                self.conn.execute(
+                    f"SELECT * FROM " +
+                    f'"{schema_name}"' +
+                    f".{table} WHERE id_value = {indicators_by_years[tables_with_rejections.index(table)][0]}")
+            ) for table in tables_with_rejections
+        ][-1]
+
+        return [
+            str(indicator_name),
+            str(code_event[:5]) if event_title is not None else None,
+            str(event_title),
+            str(code_event[:4]) if main_event_title is not None else None,
+            str(main_event_title),
+            str(code_event[0]) if subprogram_title is not None else None,
+            str(subprogram_title),
+            str(tables_with_titles[0][2]),
+            str(indicators_by_years[0][3]),
+            [str(title[0]) for title in titles_id_by_years],
+            [float(ind[4]) if type(ind[4]) == float else float(ind[5]) for ind in indicators_by_years],
+            [float(ind[5]) if type(ind[4]) == float else float(ind[6]) for ind in indicators_by_years],
+            str(rejection[0]),
+            str(rejection[1]),
+        ]
 
     def get_PM_indicators_names(self):
         indicators = list(set(indicator.title_id for indicator in self.session.query(Indicator).all()))
@@ -181,3 +262,69 @@ class DataBase:
             set(indicator.ind_title_vo for indicator in self.session.query(IndicationsVo).all()))
 
         return indicators
+
+    def get_CYR_info(self, indicator_name):
+        indicator_RF = self.session.query(IndicationsRf).filter(
+            IndicationsRf.ind_title_rf == indicator_name
+        ).first()
+        indicator_VO = self.session.query(IndicationsVo).filter(
+            IndicationsVo.ind_title_vo == indicator_name
+        ).first()
+
+        if indicator_RF is not None:
+            indicator_RF_id = indicator_RF.id
+            indicator_RF_id_task = indicator_RF.id_task
+            indicator_VO_id = self.session.query(t_indications_rf_vo).filter(
+                t_indications_rf_vo.c.id_ind_rf == indicator_RF_id
+            ).first().id_ind_vo
+        elif indicator_VO is not None:
+            indicator_VO_id = indicator_VO.id
+            indicator_RF_id = self.session.query(t_indications_rf_vo).filter(
+                t_indications_rf_vo.c.id_ind_vo == indicator_VO_id
+            ).first().id_ind_rf
+            indicator_RF_id_task = self.session.query(IndicationsRf).filter(
+                IndicationsRf.id == indicator_RF_id
+            ).first().id_task
+        else:
+            raise ValueError("Не найден данный показатель в ЦУР")
+
+        indicator_RF_target_id = self.session.query(t_indications_rf_target).filter(
+            t_indications_rf_target.c.id_ind_rf == indicator_RF_id
+        ).first().id_target
+        cyr_id = self.session.query(Task).filter(
+            Task.id == indicator_RF_id_task
+        ).first().id_cyr
+        tasks = self.session.query(Task).filter(
+            Task.id_cyr == cyr_id
+        ).all()
+        task_number = [tasks.index(task) + 1 for task in tasks if task.id == indicator_RF_id_task][0]
+
+        gosprogram_id = self.session.query(t_gosprogram_target).filter(
+            t_gosprogram_target.c.id_target == indicator_RF_target_id
+        ).first().id_prog
+        response_obj_id = self.session.query(IndicationsVo).filter(
+            IndicationsVo.id == indicator_VO_id
+        ).first().id_response
+
+        return [
+            str(self.session.query(IndicationsRf).filter(
+                IndicationsRf.id == indicator_RF_id
+            ).first().ind_title_rf),
+            f"{cyr_id}.{task_number}",
+            str(self.session.query(Task).filter(
+                Task.id == indicator_RF_id_task
+            ).first().task),
+            str(cyr_id),
+            str(self.session.query(Cyr).filter(
+                Cyr.id == cyr_id
+            ).first().title_cyr),
+            str(self.session.query(IndicationsVo).filter(
+                IndicationsVo.id == indicator_VO_id
+            ).first().ind_title_vo),
+            str(self.session.query(Gosprogram).filter(
+                Gosprogram.id == gosprogram_id
+            ).first().title_prog),
+            str(self.session.query(ResponseObj).filter(
+                ResponseObj.id == response_obj_id
+            ).first().response_obj)
+        ]

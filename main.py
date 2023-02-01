@@ -6,11 +6,11 @@ from classes import SPMainWindow, SPIndWidget, SPIndWidgetPlus, ComparingLite
 from classes.DBThreadInteraction import DBInteraction
 # from other.logger_cfg import logging
 #
-# os.system("python -m PyQt5.uic.pyuic -x uiFiles/MainWindow.ui -o uiFiles/MainWindow.py")
-# os.system("python -m PyQt5.uic.pyuic -x uiFiles/updateSettings.ui -o uiFiles/UpdateSettings.py")
-# os.system("python -m PyQt5.uic.pyuic -x uiFiles/IndSubMenuWidget.ui -o uiFiles/IndSubMenuWidget.py")
-# os.system("python -m PyQt5.uic.pyuic -x uiFiles/IndSubMenuWidget1.ui -o uiFiles/IndSubMenuWidget1.py")
-# os.system("python -m PyQt5.uic.pyuic -x uiFiles/CompareIndicatorsLite.ui -o uiFiles/CompareIndicatorsLite.py")
+os.system("python -m PyQt5.uic.pyuic -x uiFiles/MainWindow.ui -o uiFiles/MainWindow.py")
+os.system("python -m PyQt5.uic.pyuic -x uiFiles/updateSettings.ui -o uiFiles/UpdateSettings.py")
+os.system("python -m PyQt5.uic.pyuic -x uiFiles/IndSubMenuWidget.ui -o uiFiles/IndSubMenuWidget.py")
+os.system("python -m PyQt5.uic.pyuic -x uiFiles/IndSubMenuWidget1.ui -o uiFiles/IndSubMenuWidget1.py")
+os.system("python -m PyQt5.uic.pyuic -x uiFiles/CompareIndicatorsLite.ui -o uiFiles/CompareIndicatorsLite.py")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

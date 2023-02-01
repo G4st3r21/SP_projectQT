@@ -1,4 +1,6 @@
 import openpyxl
+from openpyxl.worksheet.worksheet import Worksheet
+
 
 # dict = {
 #     ["наименование гос программы", "наименование показателя"]: [
@@ -11,7 +13,7 @@ import openpyxl
 def parsing(dict):
     file = 'xlsx/Таблица 7.xlsx'
     book = openpyxl.open(file)
-    sheet = book.active
+    sheet: Worksheet = book.active
     for i in range(9, 11):
         list_indicators = str(sheet['J' + str(i)].value).split('\n')
         if len(list_indicators) > 1:

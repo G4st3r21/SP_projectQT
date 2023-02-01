@@ -176,7 +176,7 @@ class GPThread(QThread):
 
     def __request_all_GP_indicators_by_industries__(self):
         for industry in self.GP_industries:
-            indicators = self.DB.get_GP_indicators_names(industry)
+            indicators = self.DB.get_GP_indicator_names(industry)
             self.indicators_by_industries[industry] = indicators
 
 
