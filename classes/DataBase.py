@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine, MetaData, text
 from sqlalchemy.orm import sessionmaker
 from classes.config import *
 from models.public import Year, IndicatorsName, Indicator
@@ -46,7 +46,7 @@ class DataBase:
     def __init__(self):
         self.engine = create_engine(f'postgresql://{username}:{password}@{host_name}:{port}/{db_name}', echo=False)
         self.conn = self.engine.connect()
-        self.meta = MetaData(self.engine)
+        # self.meta = MetaData(self.engine)
         self.DBSession = sessionmaker(bind=self.engine)
         self.session = self.DBSession()
 
@@ -139,7 +139,7 @@ class DataBase:
         indicators_names = []
         for table in tables:
             sql_request = f'SELECT title_indication FROM "{schema_name}".{table}'
-            indicators_names += self.conn.execute(sql_request).fetchall()
+            indicators_names += self.conn.execute(text(sql_request)).fetchall()
 
         return [ind_name[0] for ind_name in indicators_names]
 
